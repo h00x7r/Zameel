@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: zameel-app
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: DOMAIN
+        value: https://zameel-app.onrender.com
+
+databases:
+  - name: zameel_db
+    databaseName: zameel
+    user: zameel_admin
+    plan: free

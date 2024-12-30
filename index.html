@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zameel - Educational Platform | منصة زميل التعليمية</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="top-bar">
+                <button class="lang-switch" onclick="toggleLanguage()">
+                    <span class="lang-text">عربي</span>
+                </button>
+                <span id="userFullName"></span>
+                <button onclick="signOut()" class="sign-out-btn">Sign Out</button>
+                <button onclick="signOutAll()" class="sign-out-all-btn">Sign Out All Devices</button>
+                <a href="login.html" class="auth-button" data-en="Login" data-ar="تسجيل الدخول">Login</a>
+            </div>
+            <h1 data-en="Zameel" data-ar="زميل">Zameel</h1>
+            <nav>
+                <button class="nav-btn active" data-en="Learn" data-ar="تعلم">Learn</button>
+                <button class="nav-btn" data-en="Practice" data-ar="تدرب">Practice</button>
+                <button class="nav-btn" data-en="Profile" data-ar="الملف الشخصي">Profile</button>
+            </nav>
+        </header>
+        
+        <main>
+            <section class="sessions-section">
+                <h2>Active Sessions</h2>
+                <div id="activeSessions" class="sessions-container"></div>
+            </section>
+
+            <section class="content-section">
+                <div class="subjects-grid">
+                    <div class="subject-card">
+                        <div class="subject-icon">📚</div>
+                        <h3 data-en="Mathematics" data-ar="الرياضيات">Mathematics</h3>
+                        <p data-en="Algebra, Geometry, Calculus" data-ar="الجبر، الهندسة، التفاضل والتكامل">Algebra, Geometry, Calculus</p>
+                    </div>
+                    <div class="subject-card">
+                        <div class="subject-icon">🧪</div>
+                        <h3 data-en="Science" data-ar="العلوم">Science</h3>
+                        <p data-en="Physics, Chemistry, Biology" data-ar="الفيزياء، الكيمياء، الأحياء">Physics, Chemistry, Biology</p>
+                    </div>
+                    <div class="subject-card">
+                        <div class="subject-icon">🌍</div>
+                        <h3 data-en="English" data-ar="اللغة الإنجليزية">English</h3>
+                        <p data-en="Grammar, Literature, Writing" data-ar="القواعد، الأدب، الكتابة">Grammar, Literature, Writing</p>
+                    </div>
+                    <div class="subject-card">
+                        <div class="subject-icon">🎨</div>
+                        <h3 data-en="Arts" data-ar="الفنون">Arts</h3>
+                        <p data-en="Drawing, Music, Design" data-ar="الرسم، الموسيقى، التصميم">Drawing, Music, Design</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="app.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const fullName = localStorage.getItem('fullName');
+            
+            if (!token) {
+                window.location.href = '/login.html';
+            } else {
+                document.getElementById('userFullName').textContent = `Welcome, ${fullName}`;
+                getActiveSessions();
+            }
+        });
+    </script>
+</body>
+</html>

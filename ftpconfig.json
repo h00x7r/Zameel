@@ -1,0 +1,19 @@
+{
+    "host": "ftpupload.net",
+    "username": "if0_35749460",
+    "password": "your_ftp_password",
+    "remotePath": "/htdocs",
+    "protocol": "ftp",
+    "port": 21,
+    "fileNameEncoding": "utf8",
+    "autoUpload": true,
+    "autoDelete": false,
+    "ignore": [
+        ".git",
+        ".gitignore",
+        ".DS_Store",
+        "node_modules",
+        ".env",
+        "*.log"
+    ]
+}

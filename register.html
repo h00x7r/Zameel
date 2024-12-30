@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Zameel Platform</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="auth-container">
+            <div class="lang-switch">
+                <button onclick="toggleLanguage()">
+                    <span class="lang-text">عربي</span>
+                </button>
+            </div>
+
+            <!-- Registration Form -->
+            <form id="registrationForm" class="auth-form" onsubmit="event.preventDefault(); register();">
+                <h2 data-en="Create Account" data-ar="إنشاء حساب">Create Account</h2>
+                
+                <div class="form-group">
+                    <label for="fullName" data-en="Full Name" data-ar="الاسم الكامل">Full Name</label>
+                    <input type="text" id="fullName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email" data-en="Email" data-ar="البريد الإلكتروني">Email</label>
+                    <input type="email" id="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" data-en="Password" data-ar="كلمة المرور">Password</label>
+                    <input type="password" id="password" required>
+                    <div class="password-requirements">
+                        <p>Password must contain:</p>
+                        <ul>
+                            <li id="length">At least 8 characters</li>
+                            <li id="uppercase">One uppercase letter</li>
+                            <li id="lowercase">One lowercase letter</li>
+                            <li id="number">One number</li>
+                            <li id="special">One special character</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword" data-en="Confirm Password" data-ar="تأكيد كلمة المرور">Confirm Password</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+                
+                <div class="agreement-section">
+                    <div class="agreement-checkbox">
+                        <input type="checkbox" id="termsConsent" required>
+                        <label for="termsConsent">
+                            <span data-en="I agree to the " data-ar="أوافق على ">I agree to the </span>
+                            <a href="terms-of-service.html" target="_blank" data-en="Terms of Service" data-ar="شروط الخدمة">Terms of Service</a>
+                        </label>
+                    </div>
+                    
+                    <div class="agreement-checkbox">
+                        <input type="checkbox" id="privacyConsent" required>
+                        <label for="privacyConsent">
+                            <span data-en="I agree to the " data-ar="أوافق على ">I agree to the </span>
+                            <a href="privacy-policy.html" target="_blank" data-en="Privacy Policy" data-ar="سياسة الخصوصية">Privacy Policy</a>
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" data-en="Register" data-ar="تسجيل">Register</button>
+                
+                <p class="auth-link">
+                    <span data-en="Already have an account?" data-ar="لديك حساب بالفعل؟">Already have an account?</span>
+                    <a href="login.html" data-en="Login" data-ar="تسجيل الدخول">Login</a>
+                </p>
+            </form>
+
+            <!-- Verification Form (Initially Hidden) -->
+            <form id="verificationForm" class="auth-form hidden" onsubmit="event.preventDefault(); verifyCode();">
+                <h2 data-en="Verify Your Email" data-ar="تحقق من بريدك الإلكتروني">Verify Your Email</h2>
+                
+                <p class="verification-text" data-en="We've sent a verification code to your email" data-ar="لقد أرسلنا رمز التحقق إلى بريدك الإلكتروني">
+                    We've sent a verification code to your email
+                </p>
+                
+                <div class="verification-code-container">
+                    <input type="text" class="code-input" maxlength="1" data-index="0">
+                    <input type="text" class="code-input" maxlength="1" data-index="1">
+                    <input type="text" class="code-input" maxlength="1" data-index="2">
+                    <input type="text" class="code-input" maxlength="1" data-index="3">
+                    <input type="text" class="code-input" maxlength="1" data-index="4">
+                    <input type="text" class="code-input" maxlength="1" data-index="5">
+                </div>
+                
+                <div class="verification-timer">
+                    <span data-en="Code expires in:" data-ar="ينتهي الرمز في:">Code expires in:</span>
+                    <span id="timer">10:00</span>
+                </div>
+                
+                <button type="submit" data-en="Verify" data-ar="تحقق">Verify</button>
+                
+                <p class="resend-code">
+                    <span data-en="Didn't receive the code?" data-ar="لم تستلم الرمز؟">Didn't receive the code?</span>
+                    <a href="#" onclick="resendCode(); return false;" data-en="Resend" data-ar="إعادة إرسال">Resend</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        let resendTimeout;
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const requirements = {
+            length: /.{8,}/,
+            uppercase: /[A-Z]/,
+            lowercase: /[a-z]/,
+            number: /[0-9]/,
+            special: /[^A-Za-z0-9]/
+        };
+
+        // Password validation
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            for (const [requirement, regex] of Object.entries(requirements)) {
+                const element = document.getElementById(requirement);
+                if (regex.test(password)) {
+                    element.classList.add('valid');
+                } else {
+                    element.classList.remove('valid');
+                }
+            }
+        });
+
+        // Password confirmation
+        confirmPasswordInput.addEventListener('input', function() {
+            if (this.value === passwordInput.value) {
+                this.setCustomValidity('');
+            } else {
+                this.setCustomValidity('Passwords do not match');
+            }
+        });
+
+        function handleRegistration(event) {
+            event.preventDefault();
+            
+            const password = passwordInput.value;
+            // Check all password requirements
+            for (const [requirement, regex] of Object.entries(requirements)) {
+                if (!regex.test(password)) {
+                    alert('Please meet all password requirements');
+                    return;
+                }
+            }
+
+            // Proceed with registration
+            register();
+        }
+
+        function startVerificationTimer() {
+            let timeLeft = 600; // 10 minutes in seconds
+            const timerDisplay = document.getElementById('timer');
+            
+            const timer = setInterval(() => {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                
+                timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    timerDisplay.textContent = '0:00';
+                } else {
+                    timeLeft--;
+                }
+            }, 1000);
+        }
+
+        // Handle verification code input
+        document.querySelectorAll('.code-input').forEach(input => {
+            input.addEventListener('input', function(e) {
+                if (this.value.length === 1) {
+                    const nextIndex = parseInt(this.dataset.index) + 1;
+                    const nextInput = document.querySelector(`.code-input[data-index="${nextIndex}"]`);
+                    if (nextInput) nextInput.focus();
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && !this.value) {
+                    const prevIndex = parseInt(this.dataset.index) - 1;
+                    const prevInput = document.querySelector(`.code-input[data-index="${prevIndex}"]`);
+                    if (prevInput) {
+                        prevInput.focus();
+                        prevInput.value = '';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
