@@ -6,6 +6,63 @@
     <title>Register - Zameel Platform</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .verification-code-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .code-input {
+            width: 45px;
+            height: 45px;
+            text-align: center;
+            font-size: 24px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 0 5px;
+            background: white;
+        }
+        .code-input:focus {
+            border-color: #4A90E2;
+            outline: none;
+        }
+        .hidden {
+            display: none !important;
+        }
+        #verificationForm {
+            text-align: center;
+        }
+        #verificationForm:not(.hidden) {
+            display: block !important;
+        }
+        .email-display {
+            font-weight: bold;
+            color: #4A90E2;
+            margin: 10px 0;
+        }
+        .resend-text {
+            margin-top: 20px;
+            color: #666;
+        }
+        #resendButton {
+            background: none;
+            border: none;
+            color: #4A90E2;
+            cursor: pointer;
+            padding: 0;
+            margin: 0 5px;
+            text-decoration: underline;
+        }
+        #resendButton:disabled {
+            color: #999;
+            cursor: not-allowed;
+        }
+        #resendTimer {
+            color: #666;
+            margin-left: 5px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -28,6 +85,10 @@
                 <div class="form-group">
                     <label for="email" data-en="Email" data-ar="البريد الإلكتروني">Email</label>
                     <input type="email" id="email" required>
+                    <small class="form-text" data-en="Allowed domains: gmail.com, hotmail.com, outlook.com, protonmail.com, mail.ru" 
+                           data-ar="النطاقات المسموح بها: gmail.com, hotmail.com, outlook.com, protonmail.com, mail.ru">
+                        Allowed domains: gmail.com, hotmail.com, outlook.com, protonmail.com, mail.ru
+                    </small>
                 </div>
                 
                 <div class="form-group">
@@ -84,25 +145,32 @@
                     We've sent a verification code to your email
                 </p>
                 
+                <p class="email-display" id="verificationEmail"></p>
+                
                 <div class="verification-code-container">
-                    <input type="text" class="code-input" maxlength="1" data-index="0">
-                    <input type="text" class="code-input" maxlength="1" data-index="1">
-                    <input type="text" class="code-input" maxlength="1" data-index="2">
-                    <input type="text" class="code-input" maxlength="1" data-index="3">
-                    <input type="text" class="code-input" maxlength="1" data-index="4">
-                    <input type="text" class="code-input" maxlength="1" data-index="5">
+                    <input type="text" class="code-input" maxlength="1" data-index="0" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" class="code-input" maxlength="1" data-index="1" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" class="code-input" maxlength="1" data-index="2" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" class="code-input" maxlength="1" data-index="3" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" class="code-input" maxlength="1" data-index="4" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" class="code-input" maxlength="1" data-index="5" inputmode="numeric" pattern="[0-9]*">
                 </div>
+                
+                <p class="verification-hint" data-en="Enter the 6-digit code sent to your email" data-ar="أدخل الرمز المكون من 6 أرقام المرسل إلى بريدك الإلكتروني">
+                    Enter the 6-digit code sent to your email
+                </p>
                 
                 <div class="verification-timer">
                     <span data-en="Code expires in:" data-ar="ينتهي الرمز في:">Code expires in:</span>
                     <span id="timer">10:00</span>
                 </div>
                 
-                <button type="submit" data-en="Verify" data-ar="تحقق">Verify</button>
+                <button type="submit" class="verify-button" data-en="Verify" data-ar="تحقق">Verify</button>
                 
                 <p class="resend-code">
-                    <span data-en="Didn't receive the code?" data-ar="لم تستلم الرمز؟">Didn't receive the code?</span>
-                    <a href="#" onclick="resendCode(); return false;" data-en="Resend" data-ar="إعادة إرسال">Resend</a>
+                    <span class="resend-text" data-en="Didn't receive the code?" data-ar="لم تستلم الرمز؟">Didn't receive the code?</span>
+                    <a href="#" onclick="resendCode(); return false;" id="resendButton" data-en="Resend" data-ar="إعادة إرسال">Resend</a>
+                    <span id="resendTimer"></span>
                 </p>
             </form>
         </div>

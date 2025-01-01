@@ -15,24 +15,69 @@
             </button>
         </div>
         <div class="auth-box">
-            <h1 data-en="Login" data-ar="تسجيل الدخول">Login</h1>
+            <h1 data-en="Welcome Back" data-ar="مرحباً بعودتك">Welcome Back</h1>
+            <p class="auth-subtitle" data-en="Sign in to your account" data-ar="سجل دخول إلى حسابك">Sign in to your account</p>
+            
             <form id="loginForm" class="auth-form">
                 <div class="form-group">
-                    <label data-en="Email" data-ar="البريد الإلكتروني">Email</label>
+                    <label for="email" data-en="Email Address" data-ar="البريد الإلكتروني">Email Address</label>
                     <input type="email" id="email" required>
+                    <small class="form-text" data-en="Enter your registered email address" 
+                           data-ar="أدخل عنوان بريدك الإلكتروني المسجل">
+                        Enter your registered email address
+                    </small>
                 </div>
+                
                 <div class="form-group">
-                    <label data-en="Password" data-ar="كلمة المرور">Password</label>
-                    <input type="password" id="password" required>
+                    <label for="password" data-en="Password" data-ar="كلمة المرور">Password</label>
+                    <div class="password-input-container">
+                        <input type="password" id="password" required>
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility(this)" 
+                                data-en="Show" data-ar="إظهار">Show</button>
+                    </div>
                 </div>
-                <button type="submit" class="auth-button" data-en="Login" data-ar="تسجيل الدخول">Login</button>
+                
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" id="rememberMe">
+                        <span data-en="Remember me" data-ar="تذكرني">Remember me</span>
+                    </label>
+                    <a href="#" class="forgot-password" data-en="Forgot Password?" data-ar="نسيت كلمة المرور؟">
+                        Forgot Password?
+                    </a>
+                </div>
+                
+                <button type="submit" class="auth-button" data-en="Sign In" data-ar="تسجيل الدخول">Sign In</button>
             </form>
+            
+            <div id="unverifiedMessage" class="error-message hidden">
+                <p data-en="Please verify your email first" data-ar="يرجى التحقق من بريدك الإلكتروني أولاً">
+                    Please verify your email first
+                </p>
+                <button onclick="cleanupUnverifiedEmail()" class="secondary-button" 
+                    data-en="Remove unverified email and register again" 
+                    data-ar="إزالة البريد الإلكتروني غير المؤكد والتسجيل مرة أخرى">
+                    Remove unverified email and register again
+                </button>
+            </div>
+            
             <p class="auth-link">
                 <span data-en="Don't have an account?" data-ar="ليس لديك حساب؟">Don't have an account?</span>
-                <a href="register.html" data-en="Register" data-ar="سجل الآن">Register</a>
+                <a href="register.html" data-en="Create Account" data-ar="إنشاء حساب">Create Account</a>
             </p>
         </div>
     </div>
+    
     <script src="auth.js"></script>
+    <script>
+        function togglePasswordVisibility(button) {
+            const passwordInput = document.getElementById('password');
+            const isVisible = passwordInput.type === 'text';
+            passwordInput.type = isVisible ? 'password' : 'text';
+            button.textContent = isVisible ? 
+                (document.documentElement.dir === 'rtl' ? 'إخفاء' : 'Hide') : 
+                (document.documentElement.dir === 'rtl' ? 'إظهار' : 'Show');
+        }
+    </script>
 </body>
 </html>

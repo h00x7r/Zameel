@@ -3,7 +3,7 @@ const ftpDeploy = new FtpDeploy();
 
 const config = {
     user: "if0_35749460",
-    password: "your_ftp_password", // Replace with your FTP password
+    password: "Ue2OQwPxBj", // Glitch FTP password
     host: "ftpupload.net",
     port: 21,
     localRoot: __dirname,

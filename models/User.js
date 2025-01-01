@@ -1,47 +1,58 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const bcryptjs = require('bcryptjs');
+const { getDB } = require('../config/database');
+const { ObjectId } = require('mongodb');
 
-const User = sequelize.define('User', {
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
-    fullName: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    email: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-        validate: {
-            isEmail: true
-        }
-    },
-    password: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    isVerified: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-    },
-    verificationCode: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    verificationCodeExpires: {
-        type: DataTypes.DATE,
-        allowNull: true
-    },
-    lastLogin: {
-        type: DataTypes.DATE,
-        allowNull: true
+class User {
+    static async findByEmail(email) {
+        const db = getDB();
+        return db.collection('users').findOne({ email });
     }
-}, {
-    tableName: 'users',
-    timestamps: true
-});
+
+    static async findById(id) {
+        const db = getDB();
+        return db.collection('users').findOne({ _id: new ObjectId(id) });
+    }
+
+    static async create(userData) {
+        const db = getDB();
+        const hashedPassword = await bcryptjs.hash(userData.password, 10);
+        
+        const user = {
+            ...userData,
+            password: hashedPassword,
+            verified: false,
+            createdAt: new Date()
+        };
+
+        const result = await db.collection('users').insertOne(user);
+        return { ...user, _id: result.insertedId };
+    }
+
+    static async verifyEmail(email) {
+        const db = getDB();
+        return db.collection('users').updateOne(
+            { email },
+            { $set: { verified: true } }
+        );
+    }
+
+    static async verifyPassword(plainPassword, hashedPassword) {
+        return bcryptjs.compare(plainPassword, hashedPassword);
+    }
+
+    static async updatePassword(email, newPassword) {
+        const db = getDB();
+        const hashedPassword = await bcryptjs.hash(newPassword, 10);
+        return db.collection('users').updateOne(
+            { email },
+            { $set: { password: hashedPassword } }
+        );
+    }
+
+    static async deleteOne(query) {
+        const db = getDB();
+        return db.collection('users').deleteOne(query);
+    }
+}
 
 module.exports = User;

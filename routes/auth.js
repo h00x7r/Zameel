@@ -1,7 +1,8 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const { User, LoginHistory } = require('../models');
+const PendingRegistration = require('../models/PendingRegistration');
 const { sendVerificationEmail } = require('../services/emailService');
 const router = express.Router();
 
@@ -10,180 +11,191 @@ const generateVerificationCode = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Store temporary user data
-const pendingRegistrations = new Map();
-
 // Step 1: Initial registration
 router.post('/register', async (req, res) => {
     try {
-        const { fullName, email, password } = req.body;
+        const { name, email, password } = req.body;
 
         // Check if user already exists
-        const existingUser = await User.findOne({ where: { email } });
+        const existingUser = await User.findByEmail(email);
         if (existingUser) {
             return res.status(400).json({ message: 'Email already registered' });
         }
 
-        // Generate verification code
-        const verificationCode = generateVerificationCode();
-        const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-        // Store user data temporarily
-        pendingRegistrations.set(email, {
-            fullName,
-            email,
-            password,
-            verificationCode,
-            verificationCodeExpires
-        });
-
-        // Send verification email
-        const emailSent = await sendVerificationEmail(email, verificationCode);
-        if (!emailSent) {
-            return res.status(500).json({ message: 'Failed to send verification email' });
+        // Check for existing pending registration
+        const existingPending = await PendingRegistration.findByEmail(email);
+        if (existingPending) {
+            await PendingRegistration.delete(email); // Delete old pending registration
         }
 
-        res.status(200).json({ 
-            message: 'Verification code sent to your email',
-            email: email
+        // Generate verification code
+        const verificationCode = generateVerificationCode();
+
+        // Create pending registration
+        const hashedPassword = await bcryptjs.hash(password, 10);
+        await PendingRegistration.create(
+            { name, email, password: hashedPassword },
+            verificationCode
+        );
+
+        // Send verification email
+        await sendVerificationEmail(email, verificationCode);
+
+        res.status(201).json({ 
+            message: 'Please check your email for verification code',
+            email 
         });
     } catch (error) {
         console.error('Registration error:', error);
-        res.status(500).json({ message: 'Registration failed' });
+        res.status(500).json({ message: 'Error registering user' });
     }
 });
 
 // Step 2: Verify email and complete registration
-router.post('/verify', async (req, res) => {
+router.post('/verify-email', async (req, res) => {
     try {
         const { email, code } = req.body;
-        const pendingUser = pendingRegistrations.get(email);
 
+        // Find pending registration
+        const pendingUser = await PendingRegistration.findByEmailAndCode(email, code);
         if (!pendingUser) {
-            return res.status(400).json({ message: 'Invalid or expired verification attempt' });
+            return res.status(400).json({ message: 'Invalid or expired verification code' });
         }
 
-        if (Date.now() > new Date(pendingUser.verificationCodeExpires).getTime()) {
-            pendingRegistrations.delete(email);
-            return res.status(400).json({ message: 'Verification code expired' });
-        }
-
-        if (code !== pendingUser.verificationCode) {
-            return res.status(400).json({ message: 'Invalid verification code' });
-        }
-
-        // Create the user
-        const hashedPassword = await bcrypt.hash(pendingUser.password, 10);
+        // Create verified user
         const user = await User.create({
-            fullName: pendingUser.fullName,
+            name: pendingUser.name,
             email: pendingUser.email,
-            password: hashedPassword,
-            isVerified: true
+            password: pendingUser.password,
+            verified: true
         });
 
-        // Clean up
-        pendingRegistrations.delete(email);
+        // Delete pending registration
+        await PendingRegistration.delete(email);
 
-        // Generate JWT token
+        // Generate token
         const token = jwt.sign(
-            { userId: user.id, email: user.email },
+            { id: user._id, email: user.email },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
 
-        res.status(201).json({
-            message: 'Registration successful',
-            token,
-            user: {
-                id: user.id,
-                fullName: user.fullName,
-                email: user.email
-            }
+        res.json({ 
+            message: 'Email verified and registration completed successfully',
+            token
         });
     } catch (error) {
         console.error('Verification error:', error);
-        res.status(500).json({ message: 'Verification failed' });
+        res.status(500).json({ message: 'Error verifying email' });
     }
 });
 
-// Resend verification code
-router.post('/resend-code', async (req, res) => {
+// Remove unverified email
+router.delete('/remove-unverified/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        
+        // Remove from users collection if unverified
+        await User.deleteOne({ email, verified: false });
+        
+        // Remove any pending registrations
+        await PendingRegistration.delete(email);
+        
+        res.json({ message: 'Email removed successfully' });
+    } catch (error) {
+        console.error('Error removing email:', error);
+        res.status(500).json({ message: 'Error removing email' });
+    }
+});
+
+// Force cleanup unverified email
+router.post('/force-cleanup', async (req, res) => {
     try {
         const { email } = req.body;
-        const pendingUser = pendingRegistrations.get(email);
+        const db = getDB();
+        
+        // Remove from users collection
+        const userResult = await db.collection('users').deleteOne({ 
+            email,
+            verified: false 
+        });
+        
+        // Remove from pending registrations
+        const pendingResult = await db.collection('pending_registrations').deleteOne({ 
+            email 
+        });
 
-        if (!pendingUser) {
-            return res.status(400).json({ message: 'No pending registration found' });
-        }
-
-        // Generate new verification code
-        const verificationCode = generateVerificationCode();
-        const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000);
-
-        // Update pending registration
-        pendingUser.verificationCode = verificationCode;
-        pendingUser.verificationCodeExpires = verificationCodeExpires;
-        pendingRegistrations.set(email, pendingUser);
-
-        // Send new verification email
-        const emailSent = await sendVerificationEmail(email, verificationCode);
-        if (!emailSent) {
-            return res.status(500).json({ message: 'Failed to send verification email' });
-        }
-
-        res.status(200).json({ 
-            message: 'New verification code sent to your email',
-            email: email
+        console.log(`Cleaned up: Users=${userResult.deletedCount}, Pending=${pendingResult.deletedCount}`);
+        
+        res.json({ 
+            message: 'Cleanup successful',
+            userRemoved: userResult.deletedCount > 0,
+            pendingRemoved: pendingResult.deletedCount > 0
         });
     } catch (error) {
-        console.error('Resend code error:', error);
-        res.status(500).json({ message: 'Failed to resend verification code' });
+        console.error('Cleanup error:', error);
+        res.status(500).json({ message: 'Error during cleanup' });
     }
 });
 
-// Login endpoint
+// Clean up expired pending registrations periodically
+setInterval(async () => {
+    try {
+        await PendingRegistration.cleanupExpired();
+    } catch (error) {
+        console.error('Error cleaning up pending registrations:', error);
+    }
+}, 15 * 60 * 1000); // Run every 15 minutes
+
+// Login
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
         // Find user
-        const user = await User.findOne({ where: { email } });
+        const user = await User.findByEmail(email);
         if (!user) {
-            return res.status(401).json({ message: 'Invalid email or password' });
+            return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        // Check if user is verified
-        if (!user.isVerified) {
-            return res.status(401).json({ message: 'Please verify your email first' });
+        // Check if email is verified
+        if (!user.verified) {
+            return res.status(400).json({ message: 'Please verify your email first' });
         }
 
         // Check password
-        const validPassword = await bcrypt.compare(password, user.password);
+        const validPassword = await bcryptjs.compare(password, user.password);
         if (!validPassword) {
-            return res.status(401).json({ message: 'Invalid email or password' });
+            // Log failed attempt
+            await LoginHistory.create({
+                userId: user._id,
+                status: 'failed',
+                ipAddress: req.ip,
+                userAgent: req.get('User-Agent')
+            });
+            return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        // Generate token
-        const token = jwt.sign(
-            { userId: user.id, email: user.email },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
+        // Check for too many failed attempts
+        const failedAttempts = await LoginHistory.countDocuments({ userId: user._id, status: 'failed' });
+        if (failedAttempts >= 5) {
+            return res.status(400).json({ message: 'Too many failed attempts. Please try again later.' });
+        }
 
-        // Update last login
-        await user.update({ lastLogin: new Date() });
-
-        res.json({
-            token,
-            user: {
-                id: user.id,
-                fullName: user.fullName,
-                email: user.email
-            }
+        // Log successful login
+        await LoginHistory.create({
+            userId: user._id,
+            status: 'success',
+            ipAddress: req.ip,
+            userAgent: req.get('User-Agent')
         });
+
+        // Generate JWT token
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        res.json({ token });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ message: 'Login failed' });
+        res.status(500).json({ message: 'Error logging in' });
     }
 });
 

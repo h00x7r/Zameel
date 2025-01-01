@@ -1,6 +1,9 @@
 // API endpoints
 const API_URL = 'http://localhost:3000/api';
 
+// Allowed email domains
+const ALLOWED_DOMAINS = ['gmail.com', 'hotmail.com', 'outlook.com', 'protonmail.com', 'mail.ru'];
+
 // Language switching functionality
 function toggleLanguage() {
     const html = document.documentElement;
@@ -21,9 +24,19 @@ async function register() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
+    const isArabic = document.documentElement.dir === 'rtl';
+
+    // Check email domain
+    const domain = email.split('@')[1];
+    if (!ALLOWED_DOMAINS.includes(domain)) {
+        alert(isArabic 
+            ? "البريد الإلكتروني غير مسموح به. يرجى استخدام بريد من النطاقات المسموح بها." 
+            : "Email domain is not allowed. Please use an allowed domain.");
+        return;
+    }
 
     if (password !== confirmPassword) {
-        alert('Passwords do not match');
+        alert(isArabic ? 'كلمات المرور غير متطابقة' : 'Passwords do not match');
         return;
     }
 
@@ -34,16 +47,17 @@ async function register() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                fullName,
+                name: fullName,
                 email,
-                password
+                password,
+                language: isArabic ? 'ar' : 'en'
             })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Registration failed');
+            throw new Error(data.message);
         }
 
         // Show verification form and hide registration form
@@ -53,14 +67,30 @@ async function register() {
         // Store email for verification
         localStorage.setItem('pendingVerificationEmail', email);
         
+        // Display email in verification form
+        const emailDisplay = document.getElementById('verificationEmail');
+        emailDisplay.textContent = email;
+        
         // Start verification timer
         startVerificationTimer();
         
         // Focus first verification input
         document.querySelector('.code-input[data-index="0"]').focus();
 
+        // Show success message
+        alert(isArabic 
+            ? 'تم إرسال رمز التحقق إلى بريدك الإلكتروني' 
+            : 'Verification code has been sent to your email');
+
     } catch (error) {
-        alert(error.message);
+        if (error.message.includes('already registered')) {
+            const shouldRemove = confirm('This email is already registered but unverified. Would you like to remove it and try again?');
+            if (shouldRemove) {
+                await removeUnverifiedEmail(email);
+            }
+        } else {
+            alert(error.message);
+        }
     }
 }
 
@@ -68,20 +98,22 @@ async function register() {
 async function verifyCode() {
     const email = localStorage.getItem('pendingVerificationEmail');
     if (!email) {
-        alert('Please register first');
+        const isArabic = document.documentElement.dir === 'rtl';
+        alert(isArabic ? 'الرجاء التسجيل أولاً' : 'Please register first');
         return;
     }
 
     const codeInputs = document.querySelectorAll('.code-input');
     const verificationCode = Array.from(codeInputs).map(input => input.value).join('');
+    const isArabic = document.documentElement.dir === 'rtl';
 
     if (verificationCode.length !== 6) {
-        alert('Please enter the complete verification code');
+        alert(isArabic ? 'الرجاء إدخال رمز التحقق كاملاً' : 'Please enter the complete verification code');
         return;
     }
 
     try {
-        const response = await fetch(`${API_URL}/verify`, {
+        const response = await fetch(`${API_URL}/verify-email`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -95,19 +127,23 @@ async function verifyCode() {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Verification failed');
+            throw new Error(isArabic ? 'رمز التحقق غير صحيح أو منتهي الصلاحية' : 'Invalid or expired verification code');
         }
 
-        // Store token and redirect
+        // Store token
         localStorage.setItem('token', data.token);
         localStorage.removeItem('pendingVerificationEmail');
-        window.location.href = 'index.html';
+        
+        // Show success message
+        alert(isArabic 
+            ? 'تم التحقق من بريدك الإلكتروني بنجاح' 
+            : 'Email verified successfully');
+        
+        // Redirect with language parameter
+        window.location.href = `index.html?lang=${isArabic ? 'ar' : 'en'}`;
 
     } catch (error) {
         alert(error.message);
-        // Clear verification inputs
-        codeInputs.forEach(input => input.value = '');
-        codeInputs[0].focus();
     }
 }
 
@@ -149,9 +185,11 @@ async function resendCode() {
 }
 
 // Login function
-async function login() {
+async function login(event) {
+    event.preventDefault();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const isArabic = document.documentElement.dir === 'rtl';
 
     try {
         const response = await fetch(`${API_URL}/login`, {
@@ -161,24 +199,87 @@ async function login() {
             },
             body: JSON.stringify({
                 email,
-                password
+                password,
+                language: isArabic ? 'ar' : 'en'
             })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Login failed');
+            if (data.message.includes('verify your email')) {
+                document.getElementById('unverifiedMessage').classList.remove('hidden');
+            } else {
+                document.getElementById('unverifiedMessage').classList.add('hidden');
+            }
+            throw new Error(data.message);
         }
 
         localStorage.setItem('token', data.token);
         localStorage.setItem('fullName', data.fullName);
-        window.location.href = 'index.html';
+        localStorage.setItem('userLanguage', isArabic ? 'ar' : 'en');
+        
+        // Redirect with language parameter
+        window.location.href = `index.html?lang=${isArabic ? 'ar' : 'en'}`;
 
     } catch (error) {
-        alert(error.message);
+        const errorMessage = isArabic ? 'فشل تسجيل الدخول. يرجى التحقق من بريدك الإلكتروني وكلمة المرور.' : 
+                                      'Login failed. Please check your email and password.';
+        alert(errorMessage);
     }
 }
+
+// Handle unverified email cleanup
+async function cleanupUnverifiedEmail() {
+    const email = document.getElementById('email').value;
+    if (!email) {
+        const isArabic = document.documentElement.dir === 'rtl';
+        alert(isArabic ? 'الرجاء إدخال البريد الإلكتروني' : 'Please enter your email');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/force-cleanup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email })
+        });
+
+        if (!response.ok) {
+            throw new Error('Cleanup failed');
+        }
+
+        const data = await response.json();
+        const isArabic = document.documentElement.dir === 'rtl';
+        
+        if (data.userRemoved || data.pendingRemoved) {
+            alert(isArabic 
+                ? 'تم إزالة البريد الإلكتروني. يمكنك الآن التسجيل مرة أخرى.' 
+                : 'Email removed. You can now register again.');
+            window.location.href = 'register.html';
+        } else {
+            alert(isArabic 
+                ? 'البريد الإلكتروني غير موجود أو تم التحقق منه بالفعل' 
+                : 'Email not found or already verified');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        const isArabic = document.documentElement.dir === 'rtl';
+        alert(isArabic 
+            ? 'حدث خطأ أثناء التنظيف. حاول مرة اخرى.' 
+            : 'Error during cleanup. Please try again.');
+    }
+}
+
+// Add event listener to login form
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', login);
+    }
+});
 
 // Sign out function
 async function signOut() {
@@ -277,6 +378,25 @@ async function getActiveSessions() {
 
     } catch (error) {
         console.error('Get sessions error:', error);
+    }
+}
+
+// Remove unverified email
+async function removeUnverifiedEmail(email) {
+    try {
+        const response = await fetch(`${API_URL}/remove-unverified/${email}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to remove email');
+        }
+
+        alert('Email removed successfully. You can now register again.');
+        window.location.reload();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error removing email. Please try again.');
     }
 }
 
