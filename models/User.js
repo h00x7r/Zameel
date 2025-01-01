@@ -20,7 +20,7 @@ class User {
         const user = {
             ...userData,
             password: hashedPassword,
-            verified: false,
+            verified: userData.verified || false,
             createdAt: new Date()
         };
 

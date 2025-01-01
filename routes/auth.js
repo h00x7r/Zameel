@@ -97,23 +97,36 @@ router.post('/resend-code', async (req, res) => {
 router.post('/verify-email', async (req, res) => {
     try {
         const { email, code } = req.body;
+        console.log('Verifying email:', email, 'with code:', code);
 
         // Find pending registration
         const pendingUser = await PendingRegistration.findByEmailAndCode(email, code);
+        console.log('Found pending user:', pendingUser);
+
         if (!pendingUser) {
+            console.log('No pending registration found or code expired');
             return res.status(400).json({ message: 'Invalid or expired verification code' });
         }
 
         // Create verified user
-        const user = await User.create({
+        console.log('Creating verified user with data:', {
             name: pendingUser.name,
+            email: pendingUser.email,
+            verified: true
+        });
+
+        const user = await User.create({
+            name: pendingUser.name || email.split('@')[0], // Use email prefix if no name
             email: pendingUser.email,
             password: pendingUser.password,
             verified: true
         });
 
+        console.log('Created verified user:', user);
+
         // Delete pending registration
         await PendingRegistration.delete(email);
+        console.log('Deleted pending registration');
 
         // Generate token
         const token = jwt.sign(
@@ -122,13 +135,15 @@ router.post('/verify-email', async (req, res) => {
             { expiresIn: '24h' }
         );
 
+        console.log('Generated token');
+
         res.json({ 
             message: 'Email verified and registration completed successfully',
             token
         });
     } catch (error) {
-        console.error('Verification error:', error);
-        res.status(500).json({ message: 'Error verifying email' });
+        console.error('Verification error details:', error);
+        res.status(500).json({ message: 'Error verifying email: ' + error.message });
     }
 });
 
