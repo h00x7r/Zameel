@@ -1,6 +1,6 @@
 {
-  "install": "pnpm install",
-  "start": "node server.js",
+  "install": "npm install",
+  "start": "npm start",
   "watch": {
     "ignore": [
       "node_modules",
