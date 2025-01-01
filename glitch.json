@@ -1,21 +1,6 @@
 {
-  "install": "npm install",
-  "start": "npm start",
-  "watch": {
-    "install": {
-      "include": [
-        "^package\\.json$"
-      ]
-    },
-    "restart": {
-      "include": [
-        "\\.js$",
-        "\\.json"
-      ],
-      "exclude": [
-        "package\\.json"
-      ]
-    },
-    "throttle": 1000
-  }
+  "projectType": "node",
+  "buildDirectory": ".",
+  "startCommand": "npm start",
+  "installCommand": "npm install"
 }
