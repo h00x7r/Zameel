@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch('/api/auth/register', {
+            const response = await fetch('/api/auth/resend-code', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

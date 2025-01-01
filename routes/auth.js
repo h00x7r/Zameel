@@ -16,9 +16,9 @@ router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
-        // Check if user already exists
+        // Check if user already exists and is verified
         const existingUser = await User.findByEmail(email);
-        if (existingUser) {
+        if (existingUser && existingUser.verified) {
             return res.status(400).json({ message: 'Email already registered' });
         }
 
@@ -48,6 +48,43 @@ router.post('/register', async (req, res) => {
     } catch (error) {
         console.error('Registration error:', error);
         res.status(500).json({ message: 'Error registering user' });
+    }
+});
+
+// Resend verification code
+router.post('/resend-code', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        // Check if user exists and is already verified
+        const existingUser = await User.findByEmail(email);
+        if (existingUser && existingUser.verified) {
+            return res.status(400).json({ message: 'Email is already verified' });
+        }
+
+        // Generate new verification code
+        const verificationCode = generateVerificationCode();
+
+        // Check for existing pending registration
+        const existingPending = await PendingRegistration.findByEmail(email);
+        if (existingPending) {
+            // Update existing pending registration with new code
+            await PendingRegistration.update(email, verificationCode);
+        } else {
+            // If no pending registration exists, create a new one
+            await PendingRegistration.create({ email }, verificationCode);
+        }
+
+        // Send new verification email
+        await sendVerificationEmail(email, verificationCode);
+
+        res.json({ 
+            message: 'New verification code sent to your email',
+            email 
+        });
+    } catch (error) {
+        console.error('Resend code error:', error);
+        res.status(500).json({ message: 'Error resending verification code' });
     }
 });
 
@@ -101,10 +138,10 @@ router.delete('/remove-unverified/:email', async (req, res) => {
         // Remove any pending registrations
         await PendingRegistration.delete(email);
         
-        res.json({ message: 'Email removed successfully' });
+        res.json({ message: 'Unverified email removed successfully' });
     } catch (error) {
-        console.error('Error removing email:', error);
-        res.status(500).json({ message: 'Error removing email' });
+        console.error('Remove unverified error:', error);
+        res.status(500).json({ message: 'Error removing unverified email' });
     }
 });
 
@@ -138,15 +175,6 @@ router.post('/force-cleanup', async (req, res) => {
     }
 });
 
-// Clean up expired pending registrations periodically
-setInterval(async () => {
-    try {
-        await PendingRegistration.cleanupExpired();
-    } catch (error) {
-        console.error('Error cleaning up pending registrations:', error);
-    }
-}, 15 * 60 * 1000); // Run every 15 minutes
-
 // Login
 router.post('/login', async (req, res) => {
     try {
@@ -155,48 +183,48 @@ router.post('/login', async (req, res) => {
         // Find user
         const user = await User.findByEmail(email);
         if (!user) {
-            return res.status(400).json({ message: 'Invalid email or password' });
+            return res.status(401).json({ message: 'Invalid email or password' });
         }
 
         // Check if email is verified
         if (!user.verified) {
-            return res.status(400).json({ message: 'Please verify your email first' });
+            return res.status(401).json({ message: 'Please verify your email first' });
         }
 
         // Check password
-        const validPassword = await bcryptjs.compare(password, user.password);
-        if (!validPassword) {
-            // Log failed attempt
-            await LoginHistory.create({
-                userId: user._id,
-                status: 'failed',
-                ipAddress: req.ip,
-                userAgent: req.get('User-Agent')
-            });
-            return res.status(400).json({ message: 'Invalid email or password' });
+        const isValidPassword = await bcryptjs.compare(password, user.password);
+        if (!isValidPassword) {
+            return res.status(401).json({ message: 'Invalid email or password' });
         }
 
-        // Check for too many failed attempts
-        const failedAttempts = await LoginHistory.countDocuments({ userId: user._id, status: 'failed' });
-        if (failedAttempts >= 5) {
-            return res.status(400).json({ message: 'Too many failed attempts. Please try again later.' });
-        }
+        // Generate token
+        const token = jwt.sign(
+            { id: user._id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
 
-        // Log successful login
+        // Log login history
         await LoginHistory.create({
             userId: user._id,
-            status: 'success',
-            ipAddress: req.ip,
-            userAgent: req.get('User-Agent')
+            timestamp: new Date(),
+            success: true
         });
 
-        // Generate JWT token
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.json({ token });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ message: 'Error logging in' });
+        res.status(500).json({ message: 'Error during login' });
     }
 });
+
+// Clean up expired pending registrations periodically
+setInterval(async () => {
+    try {
+        await PendingRegistration.cleanupExpired();
+    } catch (error) {
+        console.error('Error cleaning up pending registrations:', error);
+    }
+}, 15 * 60 * 1000); // Run every 15 minutes
 
 module.exports = router;
