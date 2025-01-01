@@ -67,9 +67,14 @@ router.post('/resend-code', async (req, res) => {
 
         // Check for existing pending registration
         const existingPending = await PendingRegistration.findByEmail(email);
+        
         if (existingPending) {
             // Update existing pending registration with new code
-            await PendingRegistration.update(email, verificationCode);
+            const updated = await PendingRegistration.update(email, verificationCode);
+            if (!updated) {
+                // If update fails, create new registration
+                await PendingRegistration.create({ email }, verificationCode);
+            }
         } else {
             // If no pending registration exists, create a new one
             await PendingRegistration.create({ email }, verificationCode);

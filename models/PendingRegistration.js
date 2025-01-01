@@ -11,8 +11,23 @@ class PendingRegistration {
             expiresAt: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes expiry
         };
 
+        await this.delete(userData.email); // Delete any existing pending registration
         const result = await db.collection('pending_registrations').insertOne(pendingUser);
         return { ...pendingUser, _id: result.insertedId };
+    }
+
+    static async update(email, verificationCode) {
+        const db = getDB();
+        const result = await db.collection('pending_registrations').updateOne(
+            { email },
+            { 
+                $set: {
+                    verificationCode,
+                    expiresAt: new Date(Date.now() + 30 * 60 * 1000) // Reset expiry
+                }
+            }
+        );
+        return result.modifiedCount > 0;
     }
 
     static async findByEmail(email) {
@@ -22,11 +37,13 @@ class PendingRegistration {
 
     static async findByEmailAndCode(email, code) {
         const db = getDB();
-        return db.collection('pending_registrations').findOne({
+        const pendingUser = await db.collection('pending_registrations').findOne({
             email,
             verificationCode: code,
             expiresAt: { $gt: new Date() }
         });
+        console.log('Found pending user:', pendingUser); // Add logging
+        return pendingUser;
     }
 
     static async delete(email) {
