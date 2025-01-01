@@ -1,3 +1,18 @@
+const express = require('express');
+const cors = require('cors');
+const { connectDB } = require('./config/database');
+const path = require('path');
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
+// Database connection
+connectDB();
+
 document.addEventListener('DOMContentLoaded', () => {
     // Navigation buttons functionality
     const navButtons = document.querySelectorAll('.nav-btn');
@@ -50,3 +65,18 @@ function toggleLanguage() {
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
+
+// Serve admin panel
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+});
+
+// Serve main app
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});

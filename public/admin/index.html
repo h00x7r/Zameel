@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zameel Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/admin/styles.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="bg-gray-800 text-white w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out" id="sidebar">
+            <div class="flex items-center space-x-2 px-4">
+                <img src="/images/logo.png" alt="Logo" class="h-8 w-8">
+                <span class="text-2xl font-semibold">Zameel Admin</span>
+            </div>
+
+            <nav class="mt-10">
+                <a href="#dashboard" class="nav-link active" data-page="dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#admins" class="nav-link" data-page="admins">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Admins</span>
+                </a>
+                <a href="#media" class="nav-link" data-page="media">
+                    <i class="fas fa-images"></i>
+                    <span>Media</span>
+                </a>
+                <a href="#services" class="nav-link" data-page="services">
+                    <i class="fas fa-concierge-bell"></i>
+                    <span>Services</span>
+                </a>
+                <a href="#users" class="nav-link" data-page="users">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                </a>
+                <a href="#settings" class="nav-link" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-white shadow-lg">
+                <div class="flex items-center justify-between p-4">
+                    <button id="sidebar-toggle" class="text-gray-500 focus:outline-none md:hidden">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="flex items-center space-x-4">
+                        <span id="adminEmail" class="text-gray-700"></span>
+                        <button id="logoutBtn" class="text-red-500 hover:text-red-600">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+                <!-- Dashboard Section -->
+                <div id="dashboard-page" class="page active">
+                    <h2 class="text-2xl font-semibold mb-4">Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <h3 class="text-gray-500">Total Users</h3>
+                            <p class="text-2xl font-bold" id="totalUsers">0</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <h3 class="text-gray-500">Total Services</h3>
+                            <p class="text-2xl font-bold" id="totalServices">0</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <h3 class="text-gray-500">Total Media</h3>
+                            <p class="text-2xl font-bold" id="totalMedia">0</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <h3 class="text-gray-500">Total Admins</h3>
+                            <p class="text-2xl font-bold" id="totalAdmins">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admins Section -->
+                <div id="admins-page" class="page hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">Manage Admins</h2>
+                        <button id="addAdminBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            <i class="fas fa-plus"></i> Add Admin
+                        </button>
+                    </div>
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <table class="min-w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminsList" class="bg-white divide-y divide-gray-200">
+                                <!-- Admins will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Media Section -->
+                <div id="media-page" class="page hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">Media Library</h2>
+                        <button id="uploadMediaBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            <i class="fas fa-upload"></i> Upload Media
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="mediaGrid">
+                        <!-- Media items will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Services Section -->
+                <div id="services-page" class="page hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">Manage Services</h2>
+                        <button id="addServiceBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            <i class="fas fa-plus"></i> Add Service
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="servicesList">
+                        <!-- Services will be loaded here -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add Admin Modal -->
+    <div id="addAdminModal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="text-lg font-semibold mb-4">Add New Admin</h3>
+            <form id="addAdminForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="adminEmail">
+                        Email
+                    </label>
+                    <input type="email" id="adminEmail" name="email" class="form-input" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="adminRole">
+                        Role
+                    </label>
+                    <select id="adminRole" name="role" class="form-select">
+                        <option value="editor">Editor</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                        Permissions
+                    </label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="permissions" value="manageContent" class="form-checkbox">
+                            <span class="ml-2">Manage Content</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="permissions" value="manageUsers" class="form-checkbox">
+                            <span class="ml-2">Manage Users</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="permissions" value="viewAnalytics" class="form-checkbox">
+                            <span class="ml-2">View Analytics</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" class="modal-close mr-2">Cancel</button>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Service Modal -->
+    <div id="addServiceModal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="text-lg font-semibold mb-4">Add New Service</h3>
+            <form id="addServiceForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="serviceName">
+                        Service Name
+                    </label>
+                    <input type="text" id="serviceName" name="name" class="form-input" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="serviceDescription">
+                        Description
+                    </label>
+                    <textarea id="serviceDescription" name="description" class="form-textarea" rows="3" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="serviceImage">
+                        Image
+                    </label>
+                    <input type="file" id="serviceImage" name="image" class="form-input" accept="image/*" required>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" class="modal-close mr-2">Cancel</button>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Upload Media Modal -->
+    <div id="uploadMediaModal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="text-lg font-semibold mb-4">Upload Media</h3>
+            <form id="uploadMediaForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="mediaFiles">
+                        Select Files
+                    </label>
+                    <input type="file" id="mediaFiles" name="files" multiple class="form-input" accept="image/*,video/*">
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" class="modal-close mr-2">Cancel</button>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/admin/js/main.js"></script>
+</body>
+</html>
