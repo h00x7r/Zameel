@@ -1,6 +1,6 @@
 {
   "install": "npm install",
-  "start": "node server.js",
+  "start": "npm start",
   "watch": {
     "install": {
       "include": [
@@ -11,6 +11,9 @@
       "include": [
         "\\.js$",
         "\\.json"
+      ],
+      "exclude": [
+        "package\\.json"
       ]
     },
     "throttle": 1000
