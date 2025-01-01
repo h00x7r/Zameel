@@ -1,22 +1,20 @@
 {
-  "install": "npm install",
-  "start": "node server.js",
-  "watch": {
-    "ignore": [
-      "node_modules",
-      ".git"
+  "start": "bash start.sh",
+  "install": {
+    "include": [
+      "^package\\.json$",
+      "^\\.env$"
+    ]
+  },
+  "restart": {
+    "exclude": [
+      "^public/",
+      "^dist/"
     ],
-    "install": {
-      "include": [
-        "^package\\.json$"
-      ]
-    },
-    "restart": {
-      "include": [
-        "\\.js$",
-        "\\.json"
-      ]
-    },
-    "throttle": 1000
-  }
+    "include": [
+      "\\.js$",
+      "\\.json"
+    ]
+  },
+  "throttle": 1000
 }
