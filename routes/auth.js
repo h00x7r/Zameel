@@ -14,7 +14,8 @@ const generateVerificationCode = () => {
 // Step 1: Initial registration
 router.post('/register', async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { email, password } = req.body;
+        console.log('Registration request for email:', email);
 
         // Check if user already exists and is verified
         const existingUser = await User.findByEmail(email);
@@ -30,16 +31,21 @@ router.post('/register', async (req, res) => {
 
         // Generate verification code
         const verificationCode = generateVerificationCode();
+        console.log('Generated verification code for:', email);
+
+        // Hash password
+        const hashedPassword = await bcryptjs.hash(password, 10);
+        console.log('Hashed password for:', email);
 
         // Create pending registration
-        const hashedPassword = await bcryptjs.hash(password, 10);
         await PendingRegistration.create(
-            { name, email, password: hashedPassword },
+            { email, password: hashedPassword },
             verificationCode
         );
 
         // Send verification email
         await sendVerificationEmail(email, verificationCode);
+        console.log('Sent verification email to:', email);
 
         res.status(201).json({ 
             message: 'Please check your email for verification code',
@@ -47,7 +53,7 @@ router.post('/register', async (req, res) => {
         });
     } catch (error) {
         console.error('Registration error:', error);
-        res.status(500).json({ message: 'Error registering user' });
+        res.status(500).json({ message: 'Error registering user: ' + error.message });
     }
 });
 
