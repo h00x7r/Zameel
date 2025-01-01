@@ -205,20 +205,42 @@ router.post('/force-cleanup', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log('Login attempt for email:', email);
 
         // Find user
         const user = await User.findByEmail(email);
+        console.log('Found user:', user ? { ...user, password: '[HIDDEN]' } : null);
+
         if (!user) {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
         // Check if email is verified
         if (!user.verified) {
-            return res.status(401).json({ message: 'Please verify your email first' });
+            // Generate new verification code
+            const verificationCode = generateVerificationCode();
+            console.log('Generated new verification code for unverified user:', email);
+
+            // Create pending registration
+            await PendingRegistration.create(
+                { email, password: user.password },
+                verificationCode
+            );
+
+            // Send verification email
+            await sendVerificationEmail(email, verificationCode);
+            console.log('Sent new verification email to:', email);
+
+            return res.status(401).json({ 
+                message: 'Please verify your email first',
+                requiresVerification: true 
+            });
         }
 
         // Check password
         const isValidPassword = await bcryptjs.compare(password, user.password);
+        console.log('Password check result:', isValidPassword);
+
         if (!isValidPassword) {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
@@ -237,10 +259,15 @@ router.post('/login', async (req, res) => {
             success: true
         });
 
-        res.json({ token });
+        console.log('Login successful for:', email);
+        res.json({ 
+            token,
+            message: 'Login successful',
+            verified: true
+        });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ message: 'Error during login' });
+        res.status(500).json({ message: 'Error during login: ' + error.message });
     }
 });
 

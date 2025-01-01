@@ -44,9 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (response.ok) {
                 localStorage.setItem('token', data.token);
+                alert('Login successful!');
                 window.location.href = '/dashboard';
             } else {
-                if (data.message === 'Please verify your email first') {
+                if (data.requiresVerification) {
                     currentEmail = email;
                     loginForm.style.display = 'none';
                     verificationForm.style.display = 'block';
@@ -114,6 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Email verified successfully! Please login.');
                 verificationForm.style.display = 'none';
                 loginForm.style.display = 'block';
+                // Clear the verification code input
+                document.getElementById('verificationCode').value = '';
             } else {
                 alert(data.message || 'Verification failed');
             }
