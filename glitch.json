@@ -1,20 +1,23 @@
 {
-  "start": "bash start.sh",
-  "install": {
-    "include": [
-      "^package\\.json$",
-      "^\\.env$"
-    ]
-  },
-  "restart": {
-    "exclude": [
-      "^public/",
-      "^dist/"
+  "install": "pnpm install",
+  "start": "node server.js",
+  "watch": {
+    "ignore": [
+      "node_modules",
+      ".git"
     ],
-    "include": [
-      "\\.js$",
-      "\\.json"
-    ]
-  },
-  "throttle": 1000
+    "install": {
+      "include": [
+        "^package\\.json$",
+        "^\\.env$"
+      ]
+    },
+    "restart": {
+      "include": [
+        "\\.js$",
+        "\\.json"
+      ]
+    },
+    "throttle": 1000
+  }
 }
