@@ -46,3 +46,7 @@ function toggleLanguage() {
         element.textContent = isRTL ? element.dataset.en : element.dataset.ar;
     });
 }
+
+// Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
