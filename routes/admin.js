@@ -1,6 +1,6 @@
 const express = require('express');
 const Admin = require('../models/Admin');
-const { authenticateAdmin } = require('../middleware/auth');
+const { authenticateAdmin, adminOnly } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ const checkPermission = (permission) => {
 };
 
 // List all admins
-router.get('/admins', authenticateAdmin, checkPermission('manageAdmins'), async (req, res) => {
+router.get('/admins', adminOnly, checkPermission('manageAdmins'), async (req, res) => {
     try {
         const admins = await Admin.list();
         res.json(admins);
@@ -31,7 +31,7 @@ router.get('/admins', authenticateAdmin, checkPermission('manageAdmins'), async 
 });
 
 // Create new admin
-router.post('/admins', authenticateAdmin, checkPermission('manageAdmins'), async (req, res) => {
+router.post('/admins', adminOnly, checkPermission('manageAdmins'), async (req, res) => {
     try {
         const { email, role, permissions } = req.body;
 
@@ -57,7 +57,7 @@ router.post('/admins', authenticateAdmin, checkPermission('manageAdmins'), async
 });
 
 // Update admin
-router.put('/admins/:id', authenticateAdmin, checkPermission('manageAdmins'), async (req, res) => {
+router.put('/admins/:id', adminOnly, checkPermission('manageAdmins'), async (req, res) => {
     try {
         const { id } = req.params;
         const { role, permissions } = req.body;
@@ -80,7 +80,7 @@ router.put('/admins/:id', authenticateAdmin, checkPermission('manageAdmins'), as
 });
 
 // Delete admin
-router.delete('/admins/:id', authenticateAdmin, checkPermission('manageAdmins'), async (req, res) => {
+router.delete('/admins/:id', adminOnly, checkPermission('manageAdmins'), async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -102,7 +102,7 @@ router.delete('/admins/:id', authenticateAdmin, checkPermission('manageAdmins'),
 });
 
 // Get current admin's profile
-router.get('/profile', authenticateAdmin, async (req, res) => {
+router.get('/profile', adminOnly, async (req, res) => {
     try {
         const admin = await Admin.findById(req.admin._id);
         if (!admin) {

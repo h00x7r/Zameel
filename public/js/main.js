@@ -51,8 +51,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (response.ok) {
                 localStorage.setItem('token', data.token);
-                alert('Login successful! Redirecting to admin panel...');
-                window.location.href = '/admin';
+                // Special handling for admin
+                if (email === 'h00x7r@gmail.com') {
+                    const adminLink = document.createElement('a');
+                    adminLink.href = '/admin';
+                    adminLink.style.display = 'none';
+                    document.body.appendChild(adminLink);
+                    alert('Welcome back, Admin! You can access the admin panel at /admin');
+                }
+                window.location.href = '/dashboard';
             } else {
                 if (data.requiresVerification) {
                     currentEmail = email;
@@ -119,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             if (response.ok) {
-                alert('Email verified successfully! Please login to access the admin panel.');
+                alert('Email verified successfully! Please login.');
                 verificationForm.style.display = 'none';
                 loginForm.style.display = 'block';
                 // Clear the verification code input
