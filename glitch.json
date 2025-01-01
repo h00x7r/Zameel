@@ -1,6 +1,6 @@
 {
-  "start": ". ~/.nvm/nvm.sh && nvm use && npm start",
-  "install": ". ~/.nvm/nvm.sh && nvm use && npm install",
+  "start": "/opt/nvm/versions/node/v14/bin/npm start",
+  "install": "/opt/nvm/versions/node/v14/bin/npm install",
   "watch": {
     "ignore": [
       "node_modules",
