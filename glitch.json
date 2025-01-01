@@ -1,21 +1,18 @@
 {
-  "install": {
-    "include": [
-      "^package\\.json$",
-      "^\\.env$"
-    ]
-  },
-  "start": "npm start",
+  "start": ". ~/.nvm/nvm.sh && nvm use && npm start",
+  "install": ". ~/.nvm/nvm.sh && nvm use && npm install",
   "watch": {
     "ignore": [
       "node_modules",
       ".git"
     ],
+    "install": {
+      "include": [
+        "^package\\.json$",
+        "^\\.env$"
+      ]
+    },
     "restart": {
-      "exclude": [
-        "^public/",
-        "^dist/"
-      ],
       "include": [
         "\\.js$",
         "\\.json"
