@@ -1,5 +1,5 @@
-const User = require('./user');
-const Session = require('./session');
+const User = require('./User');
+const Session = require('./Session');
 
 module.exports = {
     User,
