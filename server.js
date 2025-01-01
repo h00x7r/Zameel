@@ -5,7 +5,7 @@ const https = require('https');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || process.env.GLITCH_PORT || 3001;
 const domain = process.env.DOMAIN || 'https://zameel.rf.gd';
 
 // Middleware
@@ -41,7 +41,7 @@ const { connectDB } = require('./config/database');
 const startServer = async () => {
     try {
         await connectDB();
-        app.listen(port, () => {
+        app.listen(port, '0.0.0.0', () => {
             console.log(`Server is running on port ${port}`);
             console.log(`Domain: ${domain}`);
         });
@@ -49,14 +49,10 @@ const startServer = async () => {
         // Handle graceful shutdown
         process.on('SIGTERM', () => {
             console.log('SIGTERM signal received: closing HTTP server');
-            app.close(() => {
-                console.log('HTTP server closed');
-                process.exit(0);
-            });
+            process.exit(0);
         });
-
     } catch (error) {
-        console.error('Server startup error:', error);
+        console.error('Error starting server:', error);
         process.exit(1);
     }
 };
