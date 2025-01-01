@@ -11,6 +11,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentEmail = '';
 
+    // Check if already logged in
+    const token = localStorage.getItem('token');
+    if (token) {
+        window.location.href = '/admin';
+        return;
+    }
+
     // Toggle between forms
     showRegister.addEventListener('click', (e) => {
         e.preventDefault();
@@ -44,8 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (response.ok) {
                 localStorage.setItem('token', data.token);
-                alert('Login successful!');
-                window.location.href = '/dashboard';
+                alert('Login successful! Redirecting to admin panel...');
+                window.location.href = '/admin';
             } else {
                 if (data.requiresVerification) {
                     currentEmail = email;
@@ -112,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             if (response.ok) {
-                alert('Email verified successfully! Please login.');
+                alert('Email verified successfully! Please login to access the admin panel.');
                 verificationForm.style.display = 'none';
                 loginForm.style.display = 'block';
                 // Clear the verification code input
