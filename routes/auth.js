@@ -1,7 +1,8 @@
 const express = require('express');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { User, LoginHistory } = require('../models');
+const User = require('../models/User');
+const LoginHistory = require('../models/LoginHistory');
 const PendingRegistration = require('../models/PendingRegistration');
 const { sendVerificationEmail } = require('../services/emailService');
 const router = express.Router();
@@ -226,6 +227,14 @@ router.post('/login', async (req, res) => {
         console.log('Password check result:', isValidPassword);
 
         if (!isValidPassword) {
+            // Log failed attempt
+            await LoginHistory.create({
+                userId: user._id,
+                ipAddress: req.ip,
+                userAgent: req.get('user-agent'),
+                status: 'failed'
+            });
+
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
@@ -245,6 +254,14 @@ router.post('/login', async (req, res) => {
             await sendVerificationEmail(email, verificationCode);
             console.log('Sent new verification email to:', email);
 
+            // Log failed attempt due to unverified email
+            await LoginHistory.create({
+                userId: user._id,
+                ipAddress: req.ip,
+                userAgent: req.get('user-agent'),
+                status: 'unverified'
+            });
+
             return res.status(401).json({ 
                 message: 'Please verify your email first',
                 requiresVerification: true 
@@ -258,11 +275,12 @@ router.post('/login', async (req, res) => {
             { expiresIn: '24h' }
         );
 
-        // Log login history
+        // Log successful login
         await LoginHistory.create({
             userId: user._id,
-            timestamp: new Date(),
-            success: true
+            ipAddress: req.ip,
+            userAgent: req.get('user-agent'),
+            status: 'success'
         });
 
         console.log('Login successful for:', email);
