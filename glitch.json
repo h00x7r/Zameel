@@ -1,18 +1,21 @@
 {
-  "install": "npm install",
+  "install": {
+    "include": [
+      "^package\\.json$",
+      "^\\.env$"
+    ]
+  },
   "start": "npm start",
   "watch": {
     "ignore": [
       "node_modules",
       ".git"
     ],
-    "install": {
-      "include": [
-        "^package\\.json$",
-        "^\\.env$"
-      ]
-    },
     "restart": {
+      "exclude": [
+        "^public/",
+        "^dist/"
+      ],
       "include": [
         "\\.js$",
         "\\.json"
