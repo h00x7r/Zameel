@@ -1,5 +1,5 @@
 {
-  "start": "/opt/nvm/versions/node/v14/bin/npm start",
+  "start": "/opt/nvm/versions/node/v14/bin/node server.js",
   "install": "/opt/nvm/versions/node/v14/bin/npm install",
   "watch": {
     "ignore": [
