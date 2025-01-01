@@ -114,21 +114,26 @@ router.post('/verify-email', async (req, res) => {
             return res.status(400).json({ message: 'Invalid or expired verification code' });
         }
 
-        // Create verified user
-        console.log('Creating verified user with data:', {
-            name: pendingUser.name,
-            email: pendingUser.email,
-            verified: true
-        });
+        // Check if user already exists
+        let user = await User.findByEmail(email);
+        
+        if (user) {
+            // Update existing user
+            console.log('Updating existing user:', email);
+            await User.verifyEmail(email);
+            user = await User.findByEmail(email);
+        } else {
+            // Create new verified user
+            console.log('Creating new verified user:', email);
+            user = await User.create({
+                name: email.split('@')[0],
+                email: pendingUser.email,
+                password: pendingUser.password,
+                verified: true
+            });
+        }
 
-        const user = await User.create({
-            name: pendingUser.name || email.split('@')[0], // Use email prefix if no name
-            email: pendingUser.email,
-            password: pendingUser.password,
-            verified: true
-        });
-
-        console.log('Created verified user:', user);
+        console.log('User after verification:', { ...user, password: '[HIDDEN]' });
 
         // Delete pending registration
         await PendingRegistration.delete(email);
@@ -145,7 +150,8 @@ router.post('/verify-email', async (req, res) => {
 
         res.json({ 
             message: 'Email verified and registration completed successfully',
-            token
+            token,
+            verified: true
         });
     } catch (error) {
         console.error('Verification error details:', error);
@@ -215,7 +221,15 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
-        // Check if email is verified
+        // Check password first
+        const isValidPassword = await bcryptjs.compare(password, user.password);
+        console.log('Password check result:', isValidPassword);
+
+        if (!isValidPassword) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        // Now check if email is verified
         if (!user.verified) {
             // Generate new verification code
             const verificationCode = generateVerificationCode();
@@ -235,14 +249,6 @@ router.post('/login', async (req, res) => {
                 message: 'Please verify your email first',
                 requiresVerification: true 
             });
-        }
-
-        // Check password
-        const isValidPassword = await bcryptjs.compare(password, user.password);
-        console.log('Password check result:', isValidPassword);
-
-        if (!isValidPassword) {
-            return res.status(401).json({ message: 'Invalid email or password' });
         }
 
         // Generate token

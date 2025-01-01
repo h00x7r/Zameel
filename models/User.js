@@ -7,7 +7,7 @@ class User {
         const db = getDB();
         console.log('Finding user by email:', email);
         const user = await db.collection('users').findOne({ email });
-        console.log('Found user:', user);
+        console.log('Found user:', user ? { ...user, password: '[HIDDEN]' } : null);
         return user;
     }
 
@@ -15,7 +15,7 @@ class User {
         const db = getDB();
         console.log('Finding user by ID:', id);
         const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
-        console.log('Found user:', user);
+        console.log('Found user:', user ? { ...user, password: '[HIDDEN]' } : null);
         return user;
     }
 
@@ -31,7 +31,27 @@ class User {
             createdAt: new Date()
         };
 
-        console.log('Inserting user:', { ...user, password: '[HIDDEN]' });
+        // Check if user already exists
+        const existingUser = await this.findByEmail(user.email);
+        if (existingUser) {
+            if (existingUser.verified) {
+                throw new Error('Email already registered and verified');
+            }
+            // Update existing unverified user
+            console.log('Updating existing unverified user:', user.email);
+            const result = await db.collection('users').updateOne(
+                { email: user.email },
+                { $set: { 
+                    verified: user.verified,
+                    password: user.password,
+                    updatedAt: new Date()
+                }}
+            );
+            console.log('Update result:', result);
+            return { ...existingUser, ...user };
+        }
+
+        console.log('Inserting new user:', { ...user, password: '[HIDDEN]' });
         const result = await db.collection('users').insertOne(user);
         console.log('Created user with ID:', result.insertedId);
         return { ...user, _id: result.insertedId };
@@ -42,7 +62,12 @@ class User {
         console.log('Verifying email for user:', email);
         const result = await db.collection('users').updateOne(
             { email },
-            { $set: { verified: true } }
+            { 
+                $set: { 
+                    verified: true,
+                    updatedAt: new Date()
+                }
+            }
         );
         console.log('Verify email result:', result);
         return result;
@@ -58,7 +83,12 @@ class User {
         const hashedPassword = await bcryptjs.hash(newPassword, 10);
         const result = await db.collection('users').updateOne(
             { email },
-            { $set: { password: hashedPassword } }
+            { 
+                $set: { 
+                    password: hashedPassword,
+                    updatedAt: new Date()
+                }
+            }
         );
         console.log('Update password result:', result);
         return result;
